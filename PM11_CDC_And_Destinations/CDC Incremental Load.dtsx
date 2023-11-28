@@ -1,0 +1,1439 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="11/28/2023 9:50:21 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESK"
+  DTS:CreatorName="DESK\Stan"
+  DTS:DTSID="{95EF6775-8A99-49DB-98BE-8DA6A1261697}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5314.0"
+  DTS:LocaleID="1032"
+  DTS:ObjectName="Package1"
+  DTS:PackageType="5"
+  DTS:VersionBuild="10"
+  DTS:VersionGUID="{95957BFB-3503-4E2B-9164-732A6464FA8E}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{1346EC2D-2ACB-4FA4-9329-0DAFD942AC58}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="CDC_State">
+      <DTS:VariableValue
+        DTS:DataType="8"
+        xml:space="preserve"></DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Get Processing Range"
+      DTS:CreationName="Attunity.CdcControlTask"
+      DTS:Description="CDC Control Task"
+      DTS:DTSID="{8C51F634-7DCD-4286-86AD-D1D1857B0E0F}"
+      DTS:ExecutableType="Attunity.CdcControlTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Get Processing Range"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <CDCControlTask
+          Connection="DESK.CDCExample"
+          TaskOperation="GetProcessingRange"
+          OperationParameter=""
+          StateConnection="DESK.CDCExample"
+          StateVariable="User::CDC_State"
+          AutomaticStatePersistence="True"
+          StateName="CDC_State"
+          StateTable="[dbo].[cdc_states]"
+          CommandTimeout="30"
+          ChangeDetectionRetryInterval="10"
+          ChangeDetectionTimeout="60" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Deletions"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{a04d08f4-802d-471e-b70f-75fa5704ba6d}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Deletions"
+      DTS:ThreadHint="1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{A546478B-C276-4F24-A10D-6E0B2B974778}"
+          SQLTask:SqlStatementSource="UPDATE Target&#xA;SET Deleted = 1&#xA;FROM StagingDeleted staging&#xA;INNER JOIN Target&#xA;ON staging.ID = Target.ID;&#xA;&#xA;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load New"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{644CE011-A1E3-4EC1-A48C-B4F6C367B583}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load New"
+      DTS:ThreadHint="2">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{A546478B-C276-4F24-A10D-6E0B2B974778}"
+          SQLTask:SqlStatementSource="INSERT INTO Target &#xA;(ID, FirstName, LastName, Phone)&#xA;SELECT ID, FirstName, LastName, Phone&#xA;FROM StagingNew;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Staging Tables"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="Data Flow Task"
+      DTS:DTSID="{74C42A1B-AFC8-4376-899F-8BF492C6C128}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Staging Tables"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\Load Staging Tables\CDC Source"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Attunity Ltd.; All Rights Reserved; http://www.attunity.com;"
+              description="Reads change data from a SQL Server change table making it available for processing by downstream data-flow components. Only changes within the current processing range determined by the CDC Control task are read"
+              name="CDC Source"
+              usesDispositions="true"
+              version="8">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="An SSIS string package variable to store the CDC state of the current CDC state."
+                  expressionType="Notify"
+                  name="StateVariable"
+                  typeConverter="Attunity.SqlServer.CDCSrc.PackageVariablesTypeConverter">User::CDC_State</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the content of the metadata columns and the rows returned. Modes starting with ‘All’ return all changes and modes starting with ‘Net’ return net changes."
+                  expressionType="Notify"
+                  name="CDCProcessingMode"
+                  typeConverter="Attunity.SqlServer.CDCSrc.CdcProcessingMode">2</property>
+                <property
+                  dataType="System.String"
+                  description="The name of the CDC capture instance. By default the capture instance name is in the form of &quot;&lt;owner&gt;_&lt;table&gt;&quot;. The actual table that stores the changes is the CDC table named &quot;cdc&quot;.&quot;&lt;capture-instance&gt;_CT&quot;"
+                  expressionType="Notify"
+                  name="CaptureInstance">dbo_Source</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time out."
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="If true, a special output column called ‘__$reprocessing ’ is added. This output column is true for each data row during the initial processing range, or when the previous CDC run&#xA;was stopped without finishing. The default value is false (the __$reprocessing output column is not generated). This special output column allows the SSIS developer to handle consistency errors differently when working on the Initial Processing Range or the previous CDC run was stopped."
+                  expressionType="Notify"
+                  name="ReprocessingIndication">false</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Attunity.CdcSourceComponent</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Load Staging Tables\CDC Source.Connections[Connection]"
+                  connectionManagerID="{A546478B-C276-4F24-A10D-6E0B2B974778}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[DESK.CDCExample]"
+                  name="Connection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\Load Staging Tables\CDC Source.Outputs[Output]"
+                  name="Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$start_lsn]"
+                      dataType="bytes"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$start_lsn]"
+                      length="10"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$start_lsn]"
+                      name="__$start_lsn"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$operation]"
+                      dataType="i4"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$operation]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$operation]"
+                      name="__$operation"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$update_mask]"
+                      dataType="bytes"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$update_mask]"
+                      length="128"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$update_mask]"
+                      name="__$update_mask"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]"
+                      dataType="i4"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[ID]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]"
+                      name="ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]"
+                      dataType="wstr"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[FirstName]"
+                      length="50"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]"
+                      name="FirstName"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]"
+                      dataType="wstr"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[LastName]"
+                      length="50"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]"
+                      name="LastName"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]"
+                      dataType="i4"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[Phone]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]"
+                      name="Phone"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$command_id]"
+                      dataType="i4"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$command_id]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$command_id]"
+                      name="__$command_id"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$start_lsn]"
+                      dataType="bytes"
+                      length="10"
+                      name="__$start_lsn" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$operation]"
+                      dataType="i4"
+                      name="__$operation" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$update_mask]"
+                      dataType="bytes"
+                      length="128"
+                      name="__$update_mask" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[ID]"
+                      dataType="i4"
+                      name="ID" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[FirstName]"
+                      dataType="wstr"
+                      length="50"
+                      name="FirstName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[LastName]"
+                      dataType="wstr"
+                      length="50"
+                      name="LastName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[Phone]"
+                      dataType="i4"
+                      name="Phone" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[Output].ExternalColumns[__$command_id]"
+                      dataType="i4"
+                      name="__$command_id" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput]"
+                  isErrorOut="true"
+                  name="ErrorOutput">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$start_lsn]"
+                      dataType="bytes"
+                      length="10"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$start_lsn]"
+                      name="__$start_lsn" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$operation]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$operation]"
+                      name="__$operation" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$update_mask]"
+                      dataType="bytes"
+                      length="128"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$update_mask]"
+                      name="__$update_mask" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ID]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[ID]"
+                      name="ID" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[FirstName]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[FirstName]"
+                      name="FirstName" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[LastName]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[LastName]"
+                      name="LastName" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[Phone]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[Phone]"
+                      name="Phone" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$command_id]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[ErrorOutput].Columns[__$command_id]"
+                      name="__$command_id" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Load Staging Tables\CDC Splitter"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Attunity Ltd.; All Rights Reserved; http://www.attunity.com;"
+              description="Directs a stream of net change records into different outputs based on the type of the change (Insert, Delete and Update). This allows specific handling for different types of change records."
+              name="CDC Splitter"
+              usesDispositions="true"
+              version="8">
+              <properties>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Attunity.CdcSplitterComponent</property>
+              </properties>
+              <inputs>
+                <input
+                  refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]"
+                  errorOrTruncationOperation="Operation of the changed row is not a valid one"
+                  errorRowDisposition="FailComponent"
+                  name="Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[__$start_lsn]"
+                      cachedDataType="bytes"
+                      cachedLength="10"
+                      cachedName="__$start_lsn"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$start_lsn]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[__$operation]"
+                      cachedDataType="i4"
+                      cachedName="__$operation"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$operation]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[__$update_mask]"
+                      cachedDataType="bytes"
+                      cachedLength="128"
+                      cachedName="__$update_mask"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$update_mask]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[ID]"
+                      cachedDataType="i4"
+                      cachedName="ID"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[FirstName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="FirstName"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[LastName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="LastName"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[Phone]"
+                      cachedDataType="i4"
+                      cachedName="Phone"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Inputs[Input].Columns[__$command_id]"
+                      cachedDataType="i4"
+                      cachedName="__$command_id"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[__$command_id]" />
+                  </inputColumns>
+                  <externalMetadataColumns />
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Load Staging Tables\CDC Splitter.Outputs[InsertOutput]"
+                  exclusionGroup="1"
+                  name="InsertOutput"
+                  synchronousInputId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="Output type - Insert."
+                      name="OutputType"
+                      typeConverter="Attunity.SqlServer.CDCSplit.OutputType">0</property>
+                  </properties>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\Load Staging Tables\CDC Splitter.Outputs[DeleteOutput]"
+                  exclusionGroup="1"
+                  name="DeleteOutput"
+                  synchronousInputId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="Output type - Delete."
+                      name="OutputType"
+                      typeConverter="Attunity.SqlServer.CDCSplit.OutputType">2</property>
+                  </properties>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\Load Staging Tables\CDC Splitter.Outputs[UpdateOutput]"
+                  exclusionGroup="1"
+                  name="UpdateOutput"
+                  synchronousInputId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="Output type - Update."
+                      name="OutputType"
+                      typeConverter="Attunity.SqlServer.CDCSplit.OutputType">1</property>
+                  </properties>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\Load Staging Tables\CDC Splitter.Outputs[ErrorOutput]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ErrorOutput"
+                  synchronousInputId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="Output type - Error."
+                      name="OutputType"
+                      typeConverter="Attunity.SqlServer.CDCSplit.OutputType">3</property>
+                  </properties>
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Outputs[ErrorOutput].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Splitter.Outputs[ErrorOutput].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\CDC Splitter.Outputs[ErrorOutput].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\CDC Splitter.Outputs[ErrorOutput].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Load Staging Tables\Staging Deletions"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="Staging Deletions"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">"dbo"."StagingDeleted"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Load Staging Tables\Staging Deletions.Connections[IDbConnection]"
+                  connectionManagerID="{A546478B-C276-4F24-A10D-6E0B2B974778}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[DESK.CDCExample]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].Columns[ID]"
+                      cachedDataType="i4"
+                      cachedName="ID"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].Columns[FirstName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="FirstName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].Columns[LastName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="LastName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].Columns[Phone]"
+                      cachedDataType="i4"
+                      cachedName="Phone"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      dataType="i4"
+                      name="ID" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="FirstName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="LastName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      dataType="i4"
+                      name="Phone" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Load Staging Tables\Staging Deletions.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Deletions.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Deletions.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Deletions.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Load Staging Tables\Staging Inserts"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="Staging Inserts"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">"dbo"."StagingNew"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Load Staging Tables\Staging Inserts.Connections[IDbConnection]"
+                  connectionManagerID="{A546478B-C276-4F24-A10D-6E0B2B974778}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[DESK.CDCExample]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].Columns[ID]"
+                      cachedDataType="i4"
+                      cachedName="ID"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].Columns[FirstName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="FirstName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].Columns[LastName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="LastName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].Columns[Phone]"
+                      cachedDataType="i4"
+                      cachedName="Phone"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      dataType="i4"
+                      name="ID" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="FirstName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="LastName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      dataType="i4"
+                      name="Phone" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Load Staging Tables\Staging Inserts.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Inserts.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Inserts.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Inserts.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Load Staging Tables\Staging Updates"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="Staging Updates"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">"dbo"."StagingUpdated"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Load Staging Tables\Staging Updates.Connections[IDbConnection]"
+                  connectionManagerID="{A546478B-C276-4F24-A10D-6E0B2B974778}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[DESK.CDCExample]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].Columns[ID]"
+                      cachedDataType="i4"
+                      cachedName="ID"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[ID]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].Columns[FirstName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="FirstName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[FirstName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].Columns[LastName]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="LastName"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[LastName]" />
+                    <inputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].Columns[Phone]"
+                      cachedDataType="i4"
+                      cachedName="Phone"
+                      externalMetadataColumnId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      lineageId="Package\Load Staging Tables\CDC Source.Outputs[Output].Columns[Phone]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[ID]"
+                      dataType="i4"
+                      name="ID" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[FirstName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="FirstName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[LastName]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="LastName" />
+                    <externalMetadataColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input].ExternalColumns[Phone]"
+                      dataType="i4"
+                      name="Phone" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Load Staging Tables\Staging Updates.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Updates.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Load Staging Tables\Staging Updates.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Load Staging Tables\Staging Updates.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\Load Staging Tables.Paths[DeleteOutput]"
+              endId="Package\Load Staging Tables\Staging Deletions.Inputs[ADO NET Destination Input]"
+              name="DeleteOutput"
+              startId="Package\Load Staging Tables\CDC Splitter.Outputs[DeleteOutput]" />
+            <path
+              refId="Package\Load Staging Tables.Paths[InsertOutput]"
+              endId="Package\Load Staging Tables\Staging Inserts.Inputs[ADO NET Destination Input]"
+              name="InsertOutput"
+              startId="Package\Load Staging Tables\CDC Splitter.Outputs[InsertOutput]" />
+            <path
+              refId="Package\Load Staging Tables.Paths[Output]"
+              endId="Package\Load Staging Tables\CDC Splitter.Inputs[Input]"
+              name="Output"
+              startId="Package\Load Staging Tables\CDC Source.Outputs[Output]" />
+            <path
+              refId="Package\Load Staging Tables.Paths[UpdateOutput]"
+              endId="Package\Load Staging Tables\Staging Updates.Inputs[ADO NET Destination Input]"
+              name="UpdateOutput"
+              startId="Package\Load Staging Tables\CDC Splitter.Outputs[UpdateOutput]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Updates"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{e511e7d2-6cac-4839-a02b-c3c0db004a5d}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Updates"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{A546478B-C276-4F24-A10D-6E0B2B974778}"
+          SQLTask:SqlStatementSource="UPDATE Target&#xA;SET FirstName = staging.FirstName, &#xA;LastName = staging.LastName, &#xA;Phone = staging.Phone&#xA;FROM StagingUpdated staging&#xA;INNER JOIN Target&#xA;ON staging.ID = Target.ID;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Mark Processed Range"
+      DTS:CreationName="Attunity.CdcControlTask"
+      DTS:Description="CDC Control Task"
+      DTS:DTSID="{A6735406-15AC-40FA-A3C8-813365C95E1C}"
+      DTS:ExecutableType="Attunity.CdcControlTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Mark Processed Range"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <CDCControlTask
+          Connection="DESK.CDCExample"
+          TaskOperation="MarkProcessedRange"
+          OperationParameter=""
+          StateConnection="DESK.CDCExample"
+          StateVariable="User::CDC_State"
+          AutomaticStatePersistence="True"
+          StateName="CDC_State"
+          StateTable="[dbo].[cdc_states]"
+          CommandTimeout="30"
+          ChangeDetectionRetryInterval="10"
+          ChangeDetectionTimeout="60" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Staging"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{2D2E871E-472C-40C9-AC7B-A4F073DBE38B}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Staging"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{A546478B-C276-4F24-A10D-6E0B2B974778}"
+          SQLTask:SqlStatementSource="TRUNCATE TABLE StagingNew;&#xA;TRUNCATE TABLE StagingUpdated;&#xA;TRUNCATE TABLE StagingDeleted;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{A911B768-54A8-46C0-AEB3-3D3E09FB11B4}"
+      DTS:From="Package\Get Processing Range"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Load Staging Tables" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{CF237662-0DBD-4559-AE7A-8B2BC80C4564}"
+      DTS:From="Package\Load Staging Tables"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Load New" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{242F1DBC-8E5E-4CA2-9FEE-DF04C6EFB7B2}"
+      DTS:From="Package\Load Staging Tables"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Load Updates" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{F7070EC2-68DB-461A-A69E-01E230D1F770}"
+      DTS:From="Package\Load Staging Tables"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Load Deletions" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{DB7F26CE-B94F-4BEB-8094-C1325C97A9F8}"
+      DTS:From="Package\Load New"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Mark Processed Range" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 5]"
+      DTS:CreationName=""
+      DTS:DTSID="{52DE886E-E632-4890-848B-B01273FA1BAC}"
+      DTS:From="Package\Load Updates"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 5"
+      DTS:To="Package\Mark Processed Range" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 6]"
+      DTS:CreationName=""
+      DTS:DTSID="{9CA10D5A-E9A8-4731-9C78-B57B12B6A154}"
+      DTS:From="Package\Load Deletions"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 6"
+      DTS:To="Package\Mark Processed Range" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 7]"
+      DTS:CreationName=""
+      DTS:DTSID="{C4277614-3564-4200-8E35-B559CCAA0182}"
+      DTS:From="Package\Mark Processed Range"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 7"
+      DTS:To="Package\Truncate Staging" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="180.8,41.6"
+          Id="Package\Get Processing Range"
+          TopLeft="295.000000627978,52.7647058361026" />
+        <NodeLayout
+          Size="148,41.6"
+          Id="Package\Load Deletions"
+          TopLeft="526.4285725492,263.823529180514" />
+        <NodeLayout
+          Size="124.8,41.6"
+          Id="Package\Load New"
+          TopLeft="123.57142883448,255.411764482004" />
+        <NodeLayout
+          Size="173.6,41.6"
+          Id="Package\Load Staging Tables"
+          TopLeft="304.285714933459,154.470588099895" />
+        <NodeLayout
+          Size="142.4,41.6"
+          Id="Package\Load Updates"
+          TopLeft="322.142857828615,257.705882127052" />
+        <NodeLayout
+          Size="184.8,41.6"
+          Id="Package\Mark Processed Range"
+          TopLeft="297.857143491203,399.176470238342" />
+        <NodeLayout
+          Size="158.4,41.6"
+          Id="Package\Truncate Staging"
+          TopLeft="313.57142923894,480.999999578385" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="388.242857780718,94.3647058361026">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60.105882263792"
+              Start="0,0"
+              End="0,52.605882263792">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.605882263792" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="349.685714933459,196.070588099895">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-163.714286098979,59.3411763821093"
+              Start="0,0"
+              End="-163.714286098979,51.8411763821093">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,16.3788911327365" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,16.3788911327365"
+                    Point2="0,20.3788911327365"
+                    Point3="-4,20.3788911327365" />
+                  <mssgle:LineSegment
+                    End="-159.714286098979,20.3788911327365" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-159.714286098979,20.3788911327365"
+                    Point2="-163.714286098979,20.3788911327365"
+                    Point3="-163.714286098979,24.3788911327365" />
+                  <mssgle:LineSegment
+                    End="-163.714286098979,51.8411763821093" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="392.214286381037,196.070588099895">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,61.6352940271572"
+              Start="0,0"
+              End="0,54.1352940271572">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,54.1352940271572" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="432.485714933459,196.070588099895">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="167.942857615741,67.7529410806186"
+              Start="0,0"
+              End="167.942857615741,60.2529410806186">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,19.2676514754923" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,19.2676514754923"
+                    Point2="0,23.2676514754923"
+                    Point3="4,23.2676514754923" />
+                  <mssgle:LineSegment
+                    End="163.942857615741,23.2676514754923" />
+                  <mssgle:CubicBezierSegment
+                    Point1="163.942857615741,23.2676514754923"
+                    Point2="167.942857615741,23.2676514754923"
+                    Point3="167.942857615741,27.2676514754923" />
+                  <mssgle:LineSegment
+                    End="167.942857615741,60.2529410806186" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="185.97142883448,297.011764482004">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="160.085714656723,102.164705756338"
+              Start="0,0"
+              End="160.085714656723,94.6647057563378">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,63.1409588327568" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,63.1409588327568"
+                    Point2="0,67.1409588327568"
+                    Point3="4,67.1409588327568" />
+                  <mssgle:LineSegment
+                    End="156.085714656723,67.1409588327568" />
+                  <mssgle:CubicBezierSegment
+                    Point1="156.085714656723,67.1409588327568"
+                    Point2="160.085714656723,67.1409588327568"
+                    Point3="160.085714656723,71.1409588327568" />
+                  <mssgle:LineSegment
+                    End="160.085714656723,94.6647057563378" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 5]"
+          TopLeft="391.800000659909,299.305882127052">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,99.8705881112898"
+              Start="0,0"
+              End="0,92.3705881112898">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,92.3705881112898" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 6]"
+          TopLeft="600.4285725492,305.423529180514">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-165.971429057997,93.7529410578284"
+              Start="0,0"
+              End="-165.971429057997,86.2529410578284">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,57.6128858729967" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,57.6128858729967"
+                    Point2="0,61.6128858729967"
+                    Point3="-4,61.6128858729967" />
+                  <mssgle:LineSegment
+                    End="-161.971429057997,61.6128858729967" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-161.971429057997,61.6128858729967"
+                    Point2="-165.971429057997,61.6128858729967"
+                    Point3="-165.971429057997,65.6128858729967" />
+                  <mssgle:LineSegment
+                    End="-165.971429057997,86.2529410578284" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 7]"
+          TopLeft="391.514286365071,440.776470238342">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,40.2235293400435"
+              Start="0,0"
+              End="0,32.7235293400435">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,32.7235293400435" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\Load Staging Tables">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="155.2,41.6"
+          Id="Package\Load Staging Tables\Staging Updates"
+          TopLeft="301.428572070234,303.588235028011" />
+        <NodeLayout
+          Size="149.6,41.6"
+          Id="Package\Load Staging Tables\Staging Inserts"
+          TopLeft="35.714285790312,277.588235050801" />
+        <NodeLayout
+          Size="160.8,41.6"
+          Id="Package\Load Staging Tables\Staging Deletions"
+          TopLeft="597.857144129824,284.470587985945" />
+        <NodeLayout
+          Size="135.2,41.6"
+          Id="Package\Load Staging Tables\CDC Splitter"
+          TopLeft="307.85714351249,149.882352809799" />
+        <NodeLayout
+          Size="133.6,41.6"
+          Id="Package\Load Staging Tables\CDC Source"
+          TopLeft="307.85714351249,69.5882352331208" />
+        <EdgeLayout
+          Id="Package\Load Staging Tables.Paths[Output]"
+          TopLeft="375.05714351249,111.188235233121">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,38.6941175766781"
+              Start="0,0"
+              End="0,31.1941175766781">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,31.1941175766781" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Load Staging Tables.Paths[InsertOutput]"
+          TopLeft="343.65714351249,191.482352809799">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-233.142857722178,86.1058822410021"
+              Start="0,0"
+              End="-233.142857722178,78.6058822410021">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,25.8122880486255" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,25.8122880486255"
+                    Point2="0,29.8122880486255"
+                    Point3="-4,29.8122880486255" />
+                  <mssgle:LineSegment
+                    End="-229.142857722178,29.8122880486255" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-229.142857722178,29.8122880486255"
+                    Point2="-233.142857722178,29.8122880486255"
+                    Point3="-233.142857722178,33.8122880486255" />
+                  <mssgle:LineSegment
+                    End="-233.142857722178,78.6058822410021" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-145.549417142339,34.8122880486255,57.9559765625,11.43359375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Load Staging Tables.Paths[DeleteOutput]"
+          TopLeft="407.25714351249,191.482352809799">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="271.000000617334,92.988235176146"
+              Start="0,0"
+              End="271.000000617334,85.488235176146">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,28.1951529913542" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,28.1951529913542"
+                    Point2="0,32.1951529913542"
+                    Point3="4,32.1951529913542" />
+                  <mssgle:LineSegment
+                    End="267.000000617334,32.1951529913542" />
+                  <mssgle:CubicBezierSegment
+                    Point1="267.000000617334,32.1951529913542"
+                    Point2="271.000000617334,32.1951529913542"
+                    Point3="271.000000617334,36.1951529913542" />
+                  <mssgle:LineSegment
+                    End="271.000000617334,85.488235176146" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="105.553613589917,37.1951529913542,59.8927734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Load Staging Tables.Paths[UpdateOutput]"
+          TopLeft="377.242857791362,191.482352809799">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,112.105882218212"
+              Start="0,0"
+              End="0,104.605882218212">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,104.605882218212" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-31.63033203125,46.498253609106,63.2606640625,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load Staging Tables\Staging Updates">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load Staging Tables\Staging Deletions">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load Staging Tables\CDC Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load Staging Tables\Staging Inserts">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

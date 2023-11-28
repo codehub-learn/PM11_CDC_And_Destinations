@@ -1,0 +1,10 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="DESK.CDCExample"
+  DTS:DTSID="{A546478B-C276-4F24-A10D-6E0B2B974778}"
+  DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectionString="Data Source=DESK;Initial Catalog=CDCExample;Integrated Security=True;Application Name=SSIS-CDC Initial Load-{A546478B-C276-4F24-A10D-6E0B2B974778}DESK.CDCExample;" />
+  </DTS:ObjectData>
+</DTS:ConnectionManager>
